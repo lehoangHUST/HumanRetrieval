@@ -1,0 +1,14 @@
+Classification/NewDataset
+Classification/Dataset2
+Detection/results
+Detection/image_output
+*/Dataset
+results
+Test
+.idea
+__pycache__
+*.docx
+*.txt
+*.pyc
+main.py
+*.mp4

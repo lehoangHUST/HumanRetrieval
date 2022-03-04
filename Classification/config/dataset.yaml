@@ -1,0 +1,11 @@
+root: Dataset2
+train: train
+val: val
+
+class:
+        Type: ['Blazer', 'Bomber_Jacket', 'Cardigan', 'Chinos',
+               'Coat', 'Jean', 'Legging', 'Shorts', 'Skirt',
+               'Sweater', 'Tank', 'Tee']
+        Color: ['black', 'brown', 'red', 'orange', 'yellow',
+                'green', 'blue', 'gray', 'white']
+
