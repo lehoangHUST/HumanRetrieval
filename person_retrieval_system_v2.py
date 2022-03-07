@@ -96,13 +96,22 @@ def run(args):
     # Load nets
     net_YOLACT, yolact_name = modules.config_Yolact(args.yolact_weight)
     net_YOLO, strides, yolo_name, imgsz = modules.config_Yolov5(args.yolo_weight, device)
-    net_cls = Model_type('efficientnet-b0',
+
+    # Type clothes 
+    net_type = Model_type(args.extractor,
                   use_pretrained=False,
-                  num_class_1=len(cls_dataset['class']['Type']),
-                  num_class_2=len(cls_dataset['class']['Color']))
-    net_cls.load_state_dict(torch.load(args.cls_weight)['state_dict'])
-    net_cls.to(device)
-    net_cls.eval()
+                  num_class=len(cls_dataset['class']['Type']))
+    net_type.load_state_dict(torch.load(args.type_clothes_weight)['state_dict'])
+    net_type.to(device)
+    net_type.eval()
+
+    # Color clothes 
+    net_color = Model_color(args.extractor,
+                  use_pretrained=False,
+                  num_class=len(cls_dataset['class']['Color']))
+    net_color.load_state_dict(torch.load(args.color_clothes_weight)['state_dict'])
+    net_color.to(device)
+    net_color.eval()
 
     # Load data
     # Re-use yolov5 data loading pipeline for simplicity
@@ -227,12 +236,12 @@ def run(args):
           clothes_labels = []
           for i, det_cls in enumerate(det_clothes_human):
               for k, bbox in enumerate(det_cls):
-                  #roi = im0s[int(bbox[1]):int(bbox[3]), int(bbox[0]):int(bbox[2])]
-                  cls_input = net_cls.preprocess(mask_det[i][k])
-                  cls_output = net_cls(cls_input)  # list (type, color)
+                  cls_input = net_type.preprocess(mask_det[i][k])
+                  clothes_output = net_type(cls_input)
+                  color_output = net_color(cls_input)
                   # type_pred: string
                   # color_pred: list(string)
-                  type_pred, color_pred = utils.convert_output(cls_dataset['class'], cls_output)
+                  type_pred, color_pred = utils.convert_output(cls_dataset['class'], [clothes_output, color_output])
                   label = f"{type_pred} {color_pred}"
                   annotator.box_label(bbox, label, color=(0, 0, 255))
           t10 = time_sync()
@@ -250,7 +259,9 @@ def parse_args():
     parser.add_argument('--device', default='')
     parser.add_argument('--yolact_weight', type=str, default="/content/gdrive/MyDrive/yolact_plus_resnet50_6_144000.pth")
     parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/v5s_human_mosaic.pt")
-    parser.add_argument('--cls_weight', type=str, default="/content/gdrive/MyDrive/b0_best.pt")
+    parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/b1_type_clothes.pt")
+    parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/b1_color_clothes.pt")
+    parser.add_argument('--extractor', type=str, default='efficientnet-b0')
     parser.add_argument('--cls_data', type=str, default="Classification/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')
     parser.add_argument('--humans', type=str)

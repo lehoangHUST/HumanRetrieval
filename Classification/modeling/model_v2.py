@@ -41,6 +41,7 @@ class Model_type(nn.Module):
     def preprocess(self, imgs):
         """ Pre-process any given image or image batch to have desired input shape """
         #imgsz = get_imgsz(self.base_model)
+        device = next(self.base_model.parameters()).device
         if isinstance(imgs, np.ndarray):
             if imgs.ndim != 4:
                 imgs = np.expand_dims(imgs, axis=0) # b, h, w, c
@@ -53,6 +54,7 @@ class Model_type(nn.Module):
 
         imgs = transforms.Resize((self.imgsz, self.imgsz))(imgs)
         imgs = imgs / 255.
+        imgs = imgs.to(device)
         return imgs
 
     def from_config(self, config):
@@ -94,23 +96,6 @@ class Model_color(nn.Module):
         color = torch.sigmoid(self._color_cls(x))
 
         return color
-
-    def preprocess(self, imgs):
-        """ Pre-process any given image or image batch to have desired input shape """
-        #imgsz = get_imgsz(self.base_model)
-        if isinstance(imgs, np.ndarray):
-            if imgs.ndim != 4:
-                imgs = np.expand_dims(imgs, axis=0) # b, h, w, c
-            imgs = imgs.transpose((0, 3, 1, 2)) # to b, c, h, w
-            imgs = imgs.copy()
-            imgs = torch.from_numpy(imgs) # torch.Tensor
-        # sanity check
-        assert isinstance(imgs, torch.Tensor), "input must be a numpy array or torch Tensor"
-        assert imgs.dim() == 4, "Tensor must have shape (b, c, h, w)"
-
-        imgs = transforms.Resize((self.imgsz, self.imgsz))(imgs)
-        imgs = imgs / 255.
-        return imgs
 
     def from_config(self, config):
         if os.path.isfile(config):

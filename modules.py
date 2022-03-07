@@ -72,12 +72,35 @@ def config_Yolov5(yolo_weight, device, imgsz=640):
 # TODO: create a yaml config file to load classification model from
 sys.path.insert(0, "Classification")
 from Classification.modeling.model import Model
+from Classification.modeling.model_v2 import Model_type
+from Classification.modeling.model_v2 import Model_color
 
+# Model type + color
 def config_clsmodel(weight, base_extractor, num_cls1, num_cls2, device):
     model = Model(base_model=base_extractor,
                   use_pretrained=False,
                   num_class_1=num_cls1,
                   num_class_2=num_cls2)
+    model.load_state_dict(torch.load(weight)['state_dict'])
+    model.eval()
+    model.to(device)
+    return model
+
+# Model type
+def config_typemodel(weight, base_extractor, num_cls, device):
+    model = Model_type(base_model=base_extractor,
+                  use_pretrained=False,
+                  num_class=num_cls)
+    model.load_state_dict(torch.load(weight)['state_dict'])
+    model.eval()
+    model.to(device)
+    return model
+
+# Model color
+def config_colormodel(weight, base_extractor, num_cls, device):
+    model = Model_color(base_model=base_extractor,
+                  use_pretrained=False,
+                  num_class=num_cls)
     model.load_state_dict(torch.load(weight)['state_dict'])
     model.eval()
     model.to(device)
