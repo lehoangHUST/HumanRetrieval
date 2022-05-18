@@ -26,10 +26,12 @@ albumentation:
     scale_max: 1
     prob: 0
   affine: # include: translation, rotation, scaling, shear
-    scale: 1
-    translate_percent: 0
-    rotate: 0
-    shear: 0
+    scale: [0.8, 1.2]
+    translate_percent: [0.1, 0.1]
+    rotate: [-30, 30]
+    shear: [0, 0]
     fit_output: false
+    prob: 0
+  fliplr: # horizontal flip
     prob: 0
 

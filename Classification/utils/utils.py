@@ -74,7 +74,6 @@ def convert_output(dict: dict, input):
     color_output = input[1]
     color_output = (color_output > 0.5).type(torch.int)
     color_output = color_output.cpu().detach().numpy()
-
     type_pred = types[int(type_output)]
     color_pred = []
     for i in range(color_output.shape[1]):

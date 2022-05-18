@@ -43,6 +43,7 @@ class Model_type(nn.Module):
         #imgsz = get_imgsz(self.base_model)
         device = next(self.base_model.parameters()).device
         if isinstance(imgs, np.ndarray):
+            imgs = imgs[:, :, ::-1] # BGR to RGB
             if imgs.ndim != 4:
                 imgs = np.expand_dims(imgs, axis=0) # b, h, w, c
             imgs = imgs.transpose((0, 3, 1, 2)) # to b, c, h, w

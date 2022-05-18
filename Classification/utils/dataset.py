@@ -11,7 +11,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import yaml
-
+import albumentations as A
 
 import cv2
 import torch
@@ -20,6 +20,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 
 from utils.augmentation import Augmentation
+
 
 
 IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']  # acceptable image suffixes
@@ -131,6 +132,22 @@ class ClothesClassificationDataset(Dataset):
             num_color_dict = pickle.load(f)
         return num_color_dict
 
+    def get_type_statistic(self):
+        dataframe = self.get_csv()
+        cache_path = os.path.join(self.path, "type_statistic.cache")
+        if not os.path.exists(cache_path):
+            num_type_dict = {}
+            for i in range(self.type_len):
+                var = f'{self.clothes_type[i]}'
+                num_type_dict[var] = 0
+            type_series = dataframe["clothes_type"]
+            for types in type_series:
+                num_type_dict[f'{types}'] += 1
+            with open(cache_path, 'wb') as f:
+                pickle.dump(num_type_dict, f)
+        with open(cache_path, 'rb') as f:
+            num_type_dict = pickle.load(f)
+        return num_type_dict
 
     def plot_labels(self):
         print(f"Plotting labels to {self.path}/labels.jpg...")
@@ -211,6 +228,21 @@ def plot_images(samples, save_folder, fname='images.jpg', max_size=1920, max_sub
         ax.set_title(f"{t[i]} \n {c[i]}")
 
     plt.savefig(f"{save_folder}/{fname}")
+
+
+# Convert TYPE path file 
+def renamefile_img(path: str, source_preffix: str, dist_preffix: str):
+    if source_preffix in IMG_FORMATS and dist_preffix in IMG_FORMATS:
+        raise TypeError  
+    if os.path.isfile(path):
+        prefix = path.split(source_preffix)[0]
+        os.rename(path, prefix+".png")
+    if os.path.isdir(path):
+      for path_image in os.listdir(path):
+          pth = os.path.join(path, path_image)
+          prefix = pth.split(source_preffix)[0]
+          os.rename(pth, prefix+dist_preffix)
+
 
 
 class LoadImage:

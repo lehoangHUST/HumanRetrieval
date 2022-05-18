@@ -26,6 +26,34 @@ from Detection.deep_sort.deep_sort_pytorch.utils.draw import draw_boxes
 
 from Classification.utils import utils
 
+classes = [
+  "short_sleeved_shirt",
+  "long_sleeved_shirt",    
+  "short_sleeved_outwear",
+  "long_sleeved_outwear",
+  "vest",
+  "sling",
+  "short",
+  "trousers",
+  "skirt",
+  "short_sleeved_dress",
+  "long_sleeved_dress",
+  "vest_dress",
+  "sling_dress"
+]
+
+top = [
+  "short_sleeved_shirt",
+  "long_sleeved_shirt",    
+  "short_sleeved_outwear",
+  "long_sleeved_outwear",
+]
+
+bottom = [
+  "short",
+  "trousers",
+  "skirt",
+]
 
 # Matching human and clothes
 def matching(yolo_preds, yolact_preds_bbox, clothes):
@@ -53,7 +81,7 @@ def matching(yolo_preds, yolact_preds_bbox, clothes):
       # Count = not length of clothes: Not Draw bbox.
       for i in range(yolo_preds.shape[0]):
           count = 0
-          bbox_clothes = []
+          bbox_clothes = {}
           for j in range(yolact_preds_bbox.shape[0]):
               # Calculate area.
               area_j = (yolact_preds[j][2] - yolact_preds[j][0]) * (
@@ -62,7 +90,10 @@ def matching(yolo_preds, yolact_preds_bbox, clothes):
               # Conditional
               if area / area_j > 0.7:
                   count += 1
-                  bbox_clothes.append(np.array(yolact_preds[j, :4], dtype=np.int32).tolist())
+                  if classes[int(yolact_preds_bbox[j, -1])] in top:
+                      bbox_clothes['top'] = np.array(yolact_preds[j, :], dtype=np.int32).tolist()
+                  elif classes[int(yolact_preds_bbox[j, -1])] in bottom:
+                      bbox_clothes['bottom'] = np.array(yolact_preds[j, :], dtype=np.int32).tolist()
 
           if count == len(clothes):
               list_det_human.append(np.array(yolo_preds[i, :], dtype=np.float_).tolist())
@@ -183,6 +214,7 @@ def run(args):
         yolact_preds_bbox, yolact_preds_mask = run_eval_clothes(net_YOLACT,
                                         search_clothes=clothes,
                                         img_numpy=im_yolact)
+        
         t6 = time_sync()
         # inference time for YOLACT
         #print(f"Inferrence time for YOLACT nms time: {t6 - t5:.4f}")
@@ -198,32 +230,32 @@ def run(args):
           # =====================================================
 
 
-
           # changebackground by color
           # =====================================================
           mask_det = []
           for det_cls in det_clothes_human:
-            mask_clothes = []
-            for k, bbox in enumerate(det_cls):
+            mask_clothes = {}
+            for k, (body, bbox) in enumerate(det_cls.items()):
               img = im0s.copy()
               for channel in range(3):
                   img[bbox[1]:bbox[3], bbox[0]:bbox[2], channel] = yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy()\
                   *img[bbox[1]:bbox[3], bbox[0]:bbox[2], channel]
-        
               img[img == [0, 0, 0]] = 255
-              mask_clothes.append(img[bbox[1]:bbox[3], bbox[0]:bbox[2], :])
+              if body == 'top':
+                  mask_clothes['top'] = img[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+              elif body == 'bottom':
+                  mask_clothes['bottom'] = img[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+        
             mask_det.append(mask_clothes)
-
           # =====================================================
-
           # Draw matching YOLO and YOLACT bounding box
+
           # =====================================================
           for det_i, (*bbox, conf, cls) in enumerate(det_human):
             c = int(cls)
             label = f"{yolo_name[c]} {conf: .2f}"
             annotator.box_label(bbox, label, color=(255, 0, 0))
           # ======================================================
-
           # classification
           # ======================================================
           # 1. Read every single clothes ROI from yolact output one by one
@@ -234,16 +266,31 @@ def run(args):
           # =======================================================
           t9 = time_sync()
           clothes_labels = []
-          for i, det_cls in enumerate(det_clothes_human):
-              for k, bbox in enumerate(det_cls):
-                  cls_input = net_type.preprocess(mask_det[i][k])
-                  clothes_output = net_type(cls_input)
-                  color_output = net_color(cls_input)
-                  # type_pred: string
-                  # color_pred: list(string)
-                  type_pred, color_pred = utils.convert_output(cls_dataset['class'], [clothes_output, color_output])
-                  label = f"{type_pred} {color_pred}"
-                  annotator.box_label(bbox, label, color=(0, 0, 255))
+          for i, mask_clothes in enumerate(mask_det):
+              dict_pred = {}
+              for body, mask in mask_clothes.items():
+                  inp = net_type.preprocess(mask)
+                  color_output = net_color(inp)
+                  if body == 'bottom':
+                      colors = cls_dataset['class']['Color']
+                      color_pred = []
+                      color_output = (color_output > 0.5).type(torch.int)
+                      color_output = color_output.cpu().detach().numpy()
+                      for j in range(color_output.shape[1]):
+                          if color_output[0, j] == 1:
+                              color = colors[j]
+                              color_pred.append(color)
+                      idx = det_clothes_human[i]['bottom'][-1]
+                      dict_pred['bottom'] = [classes[idx], color_pred]
+                  if body == 'top':
+                      clothes_output = net_type(inp)
+                      # type_pred: string
+                      # color_pred: list(string)
+                      type_pred, color_pred = utils.convert_output(cls_dataset['class'], [clothes_output, color_output])
+                      type_pred = type_pred.lower()
+                      dict_pred['top'] = [type_pred, color_pred]
+              print(dict_pred)
+              
           t10 = time_sync()
           # inferrence time for efficientNet
           #print(f"Inferrence time for efficientNet nms time: {t10 - t9:.4f}")
@@ -253,14 +300,13 @@ def run(args):
         if args.savevid:
             output.write(annotator.im)
 
-
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', default='')
-    parser.add_argument('--yolact_weight', type=str, default="/content/gdrive/MyDrive/yolact_plus_resnet50_6_144000.pth")
-    parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/v5s_human_mosaic.pt")
-    parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/b1_type_clothes.pt")
-    parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/b1_color_clothes.pt")
+    parser.add_argument('--yolact_weight', type=str, default="/content/gdrive/MyDrive/model/yolact_plus_resnet50_6_144000.pth")
+    parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/model/v5s_human_mosaic.pt")
+    parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_type_clothes.pt")
+    parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_color_clothes.pt")
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
     parser.add_argument('--cls_data', type=str, default="Classification/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')

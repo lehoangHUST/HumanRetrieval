@@ -52,7 +52,7 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
     display_fps = False
 
     # Score threshold
-    score_threshold = 0.4
+    score_threshold = 0.3
 
     # Pred class, bbox, seg
     if undo_transform:
@@ -93,11 +93,15 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
         if scores[j] < score_threshold:
             num_dets_to_consider = j
             break
- 
+            
     index = []
-    for j in range(num_dets_to_consider):
-        if _classes_[classes[j]] in cls:
-          index.append(j)
+    if cls is not None:
+      for j in range(num_dets_to_consider):
+          if _classes_[classes[j]] in cls:
+            index.append(j)
+    else:
+      for j in range(num_dets_to_consider):
+        index.append(j)
     num_dets_to_consider = len(index)
 
     # Quick and dirty lambda for selecting the color for a particular index
@@ -214,6 +218,6 @@ def run_eval_clothes(net_yolact, search_clothes, img_numpy: np.ndarray):
     preds = net_yolact(batch)
     # TODO: make prep_display always return Tensor -> easier to work with later
     # TODO 2: replace prep_display with more elegant function
-    bbox = prep_display(preds, frame, None, None, undo_transform=False)
+    bbox, mask = prep_display(preds, frame, None, None, undo_transform=False)
 
-    return bbox
+    return bbox, mask

@@ -1,6 +1,7 @@
 from utils.utils import convert_categorial
 from utils.dataset import ClothesClassificationDataset
 import torch
+import torch.nn.functional as F
 import numpy as np
 
 class AverageMeter(object):
@@ -29,25 +30,28 @@ def accuracy_type(output, target, dataset: ClothesClassificationDataset):
 
         # split target
         type_target = target[:, :] # torch.Tensor(batch, dataset.type_len)
-        type_target = convert_categorial(type_target) # torch.Tensor(batch)
+        
+        #type_target = convert_categorial(type_target) # torch.Tensor(batch)
 
         # convert output
         type_output = output # torch.Tensor(batch, dataset.type_len)
         type_output = torch.softmax(type_output, dim=1)
-        type_output = torch.argmax(type_output, dim=1) # torch.Tensor(batch)
-      
-        # compute acc for type
-        type_correct = type_target.eq(type_output).type(torch.int)
-        type_acc = type_correct.sum().mul_(100) / batch_size # torch.Tensor
+        type_idx_output = torch.argmax(type_output, dim=1) # torch.Tensor(batch)
 
-        # compute acc for color
         # Element-wise division of the 2 tensors returns a new tensor which holds a
         # unique value for each case:
         #   1     where prediction and truth are 1 (True Positive)
         #   inf   where prediction is 1 and truth is 0 (False Positive)
         #   nan   where prediction and truth are 0 (True Negative)
         #   0     where prediction is 0 and truth is 1 (False Negative)
-    return type_acc # torch.Tensor(1)
+        type_output = F.one_hot(type_idx_output, dataset.type_len)
+        confusion_type_acc = type_output / type_target
+        
+        type_matching = torch.tensor([0] * dataset.type_len)
+        for i in range(dataset.type_len):
+            type_matching[i] = torch.sum(confusion_type_acc[:, i] == 1) # torch.Tensor(type_len)
+        
+    return type_matching # torch.Tensor(dataset.type_len)
 
 
 # accuarcy for type color clothes
