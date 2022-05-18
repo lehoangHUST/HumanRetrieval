@@ -55,6 +55,7 @@ def run_type(dataset: ClothesClassificationDataset,
 
     model.eval()
     with torch.no_grad():
+        correct_type = np.array([0] * dataset.type_len, dtype=np.int_)
         for sample in tqdm(dataloader, desc="Validation batch", unit='batch'):
             # prepare targets
             inputs = (sample["image"] / 255.).to(device) # torch.Tensor
@@ -67,15 +68,22 @@ def run_type(dataset: ClothesClassificationDataset,
             # accuracy and loss
             # type_acc: torch.Tensor on device
             # color_matching: torch.Tensor on cpu
-            type_acc = accuracy_type(outputs, targets, dataset)
-            acc1.update(type_acc.item(), inputs.size(0))
+            type_matching = accuracy_type(outputs, targets, dataset)
+            correct_type += type_matching.numpy()
             type_losses.update(type_loss.item(), inputs.size(0))
 
+        # compute color acc
+        num_type_dict = dataset.get_type_statistic()
+        total_type = np.array(list(num_type_dict.values()))
+        type_acc = correct_type / total_type
+        avg_type_acc = np.sum(type_acc) / dataset.type_len
 
         # logging
         s = ""
+        for i in range(dataset.type_len):
+            s += f'{dataset.clothes_type[i]} acc: {type_acc[i]:.4f} \t'
         print(f'Type loss: {type_losses.avg:.4f} \t'
-              f'Type acc: {acc1.avg:.4f} \t'
+              f'Type acc: {avg_type_acc:.4f} \t'
               f'{s} \n')
     return type_losses, acc1
 
