@@ -74,7 +74,7 @@ def matching(yolo_preds, yolact_preds_bbox, clothes):
             y_left = max(bbox_a[1], bbox_b[1])
             x_right = min(bbox_a[2], bbox_b[2])
             y_right = min(bbox_a[3], bbox_b[3])
-            if (x_right - x_left) * (y_right - y_left) >= 0:
+            if x_right > x_left and y_right > y_left:
                 return (x_right - x_left) * (y_right - y_left)
             else:
                 return 0
