@@ -3,8 +3,8 @@ import torch
 import torch.backends.cudnn as cudnn
 
 import os, sys
-sys.path.insert(0, "Detection")
 
+sys.path.insert(0, "Detection")
 
 # YOLACT
 # ------------------------------------------------------------
@@ -16,7 +16,7 @@ from yolact.utils.functions import SavePath
 # TODO: make config as a parameter instead of using a global parameter from yolact.data
 def config_Yolact(yolact_weight):
     # Load config from weight
-    print("Loading YOLACT" + '-'*10)
+    print("Loading YOLACT" + '-' * 10)
     model_path = SavePath.from_str(yolact_weight)
     config = model_path.model_name + '_config'
     print('Config not specified. Parsed %s from the file name.\n' % config)
@@ -41,10 +41,11 @@ def config_Yolact(yolact_weight):
         net = Yolact()
         net.load_weights(yolact_weight)
         net.eval()
-        print("Done loading YOLACT" + '-'*10)
+        print("Done loading YOLACT" + '-' * 10)
         return net.cuda(), names
-# ------------------------------------------------------------
 
+
+# ------------------------------------------------------------
 
 
 # YOLOv5
@@ -54,6 +55,7 @@ sys.path.insert(0, "Detection/yolov5")
 from yolov5.models.common import DetectMultiBackend
 from yolov5.utils.general import check_img_size
 
+
 def config_Yolov5(yolo_weight, device, imgsz=640):
     # Load model
     model = DetectMultiBackend(yolo_weight, device=device)  # load FP32 model
@@ -62,9 +64,9 @@ def config_Yolov5(yolo_weight, device, imgsz=640):
 
     return model, stride, names, imgsz
 
-# ------------------------------------------------------------
-# ------------------------------------------------------------
 
+# ------------------------------------------------------------
+# ------------------------------------------------------------
 
 
 # Classification
@@ -74,6 +76,7 @@ sys.path.insert(0, "Classification")
 from Classification.modeling.model import Model
 from Classification.modeling.model_v2 import Model_type
 from Classification.modeling.model_v2 import Model_color
+
 
 # Model type + color
 def config_clsmodel(weight, base_extractor, num_cls1, num_cls2, device):
@@ -86,21 +89,23 @@ def config_clsmodel(weight, base_extractor, num_cls1, num_cls2, device):
     model.to(device)
     return model
 
+
 # Model type
 def config_typemodel(weight, base_extractor, num_cls, device):
     model = Model_type(base_model=base_extractor,
-                  use_pretrained=False,
-                  num_class=num_cls)
+                       use_pretrained=False,
+                       num_class=num_cls)
     model.load_state_dict(torch.load(weight)['state_dict'])
     model.eval()
     model.to(device)
     return model
 
+
 # Model color
 def config_colormodel(weight, base_extractor, num_cls, device):
     model = Model_color(base_model=base_extractor,
-                  use_pretrained=False,
-                  num_class=num_cls)
+                        use_pretrained=False,
+                        num_class=num_cls)
     model.load_state_dict(torch.load(weight)['state_dict'])
     model.eval()
     model.to(device)

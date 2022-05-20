@@ -1,0 +1,9 @@
+clothes:
+  top:
+    type: 'tee'
+    color: 'blue'
+  bottom:
+    type: 'trousers'
+    color: 'white'
+
+gender: 'male'
