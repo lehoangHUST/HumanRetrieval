@@ -290,7 +290,7 @@ def run(args):
                                 color = colors[j]
                                 color_pred.append(color)
                         idx = det_clothes_human[i]['bottom'][-1]
-                        dict_pred['bottom'] = [classes[idx], color_pred]
+                        dict_pred['bottom'] = [classes[idx], color_pred, det_clothes_human[i]['bottom'][:4]]
                     if body == 'top':
                         clothes_output = net_type(inp)
                         # type_pred: string
@@ -298,7 +298,7 @@ def run(args):
                         type_pred, color_pred = utils.convert_output(cls_dataset['class'],
                                                                      [clothes_output, color_output])
                         type_pred = type_pred.lower()
-                        dict_pred['top'] = [type_pred, color_pred]
+                        dict_pred['top'] = [type_pred, color_pred, det_clothes_human[i]['top'][:4]]
                 print(dict_pred)
 
             true_top = True if (typ_top in dict_pred['top'][0] and color_top in dict_pred['top'][1]) else False
