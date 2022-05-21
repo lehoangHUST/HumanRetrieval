@@ -105,6 +105,8 @@ def prep_display(dets_out, img, h, w, undo_transform=True, class_color=False, ma
             index.append(j)
     num_dets_to_consider = len(index)
 
+    img_numpy = (img_gpu * 255).byte().cpu().numpy()
+
     if num_dets_to_consider == 0:
         return 0, 0
 

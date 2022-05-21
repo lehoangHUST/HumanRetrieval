@@ -123,6 +123,17 @@ def run(args):
         clothes = args.clothes.split(',')
     else:
         clothes = [args.clothes]
+
+    if ',' in args.top:
+        typ_top, color_top = args.top.split(',')
+    else:
+        raise TypeError
+
+    if ',' in args.bottom:
+        typ_bottom, color_bottom = args.bottom.split(',')
+    else:
+        raise TypeError
+
     # disable for now
     '''if not all(elem in class_clothes for elem in search_clothes):
         raise ValueError(f"Have any category not exist in parameter classes")'''
@@ -171,6 +182,7 @@ def run(args):
 
     # Run Inference
     for index, (path, im, im0s, vid_cap, _) in enumerate(dataset):
+        det_sys = []
         human_label = ""
         is_img = True if any(ext in path for ext in IMG_FORMATS) else False
         annotator = Annotator(np.ascontiguousarray(im0s),
@@ -289,6 +301,16 @@ def run(args):
                         dict_pred['top'] = [type_pred, color_pred]
                 print(dict_pred)
 
+            true_top = True if (typ_top in dict_pred['top'][0] and color_top in dict_pred['top'][1]) else False
+            true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_top in dict_pred['bottom'][1]) else False
+            if true_top and true_bottom:
+                det_sys.append(det_human[i])
+                # print(det_human[i])
+                # annotator.box_label(det_human[i][:4], '', color=(255, 0, 0))
+            for det_i, (cls, color, bbox) in dict_pred.items():
+                label = f"{cls} - {color}"
+                annotator.box_label(bbox, label, color=(0, 255, 0))
+            cv2.imwrite('/content/1.jpg', im0s)
             t10 = time_sync()
             # inference time for efficientNet
             # print(f"Inference time for efficientNet nms time: {t10 - t9:.4f}")
@@ -307,6 +329,8 @@ def parse_args():
     parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/model/v5s_human_mosaic.pt")
     parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_type_clothes.pt")
     parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_color_clothes.pt")
+    parser.add_argument('--top', type=str, default=None, help='Torso of human, type and color clothes')
+    parser.add_argument('--bottom', type=str, default=None, help='Leg of human, type and color clothes')
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
     parser.add_argument('--cls_data', type=str, default="Classification/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')
