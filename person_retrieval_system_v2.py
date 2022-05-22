@@ -145,7 +145,7 @@ def run(args):
     net_YOLO, strides, yolo_name, imgsz = modules.config_Yolov5(args.yolo_weight, device)
 
     # Load deepsort
-    deep_sort = modules.config_deepsort(args.cfg_deepsort)
+    deepsort = modules.config_deepsort(args.cfg_deepsort)
 
     # Load net Type clothes
     net_type = Model_type(args.extractor,
@@ -306,10 +306,10 @@ def run(args):
                         dict_pred['top'] = [type_pred, color_pred, det_clothes_human[i]['top'][:4]]
                 print(dict_pred)
 
-            true_top = True if (typ_top in dict_pred['top'][0] and color_top in dict_pred['top'][1]) else False
-            true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_top in dict_pred['bottom'][1]) else False
-            if true_top and true_bottom:
-                det_sys.append(det_human[i])
+                true_top = True if (typ_top in dict_pred['top'][0] and color_top in dict_pred['top'][1]) else False
+                true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_top in dict_pred['bottom'][1]) else False
+                if true_top and true_bottom:
+                    det_sys.append(det_human[i])
             t10 = time_sync()
             # inference time for efficientNet
             # print(f"Inference time for efficientNet nms time: {t10 - t9:.4f}")
