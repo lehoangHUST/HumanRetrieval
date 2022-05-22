@@ -65,6 +65,26 @@ def config_Yolov5(yolo_weight, device, imgsz=640):
     return model, stride, names, imgsz
 
 
+# Deepsort
+# ------------------------------------------------------------
+from deep_sort.deep_sort_pytorch.utils.parser import get_config
+from deep_sort.deep_sort_pytorch.deep_sort import DeepSort
+
+
+def config_deepsort(deepsort_cfg):
+    # initialize deepsort
+    cfg = get_config()
+    cfg.merge_from_file(deepsort_cfg)
+    deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+                        max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                        max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                        max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                        use_cuda=True)
+    return deepsort
+
+
+# ------------------------------------------------------------
+
 # ------------------------------------------------------------
 # ------------------------------------------------------------
 

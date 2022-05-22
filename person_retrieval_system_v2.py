@@ -138,11 +138,16 @@ def run(args):
     '''if not all(elem in class_clothes for elem in search_clothes):
         raise ValueError(f"Have any category not exist in parameter classes")'''
 
-    # Load nets
+    # Load nets YOLACT
     net_YOLACT, yolact_name = modules.config_Yolact(args.yolact_weight)
+
+    # Load nets YOLOv5
     net_YOLO, strides, yolo_name, imgsz = modules.config_Yolov5(args.yolo_weight, device)
 
-    # Type clothes 
+    # Load deepsort
+    deep_sort = modules.config_deepsort(args.cfg_deepsort)
+
+    # Load net Type clothes
     net_type = Model_type(args.extractor,
                           use_pretrained=False,
                           num_class=len(cls_dataset['class']['Type']))
@@ -150,7 +155,7 @@ def run(args):
     net_type.to(device)
     net_type.eval()
 
-    # Color clothes 
+    # Load net Color clothes
     net_color = Model_color(args.extractor,
                             use_pretrained=False,
                             num_class=len(cls_dataset['class']['Color']))
@@ -305,16 +310,25 @@ def run(args):
             true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_top in dict_pred['bottom'][1]) else False
             if true_top and true_bottom:
                 det_sys.append(det_human[i])
-                # print(det_human[i])
-                # annotator.box_label(det_human[i][:4], '', color=(255, 0, 0))
-            for det_i, (cls, color, bbox) in dict_pred.items():
-                label = f"{cls} - {color}"
-                annotator.box_label(bbox, label, color=(0, 255, 0))
-            cv2.imwrite('/content/1.jpg', im0s)
             t10 = time_sync()
             # inference time for efficientNet
             # print(f"Inference time for efficientNet nms time: {t10 - t9:.4f}")
             # -----------------------------------------
+
+        # Tracking object when search suitable
+        if len(det_sys):
+            list_det = np.array(list_det)
+            det = torch.from_numpy(list_det)
+            xywhs = xyxy2xywh(det[:, 0:4])
+            confs = det[:, 4]
+            clss = det[:, 5]
+
+            outputs = deepsort.update(xywhs.cpu(), confs.cpu(), clss.cpu(),
+                                      im0s)  # np array (detections, [xyxy, track_id, class_id])
+            # draw boxes for visualization
+            # img_numpy = display_video(img_numpy, outputs, color=COLOR[0], search=search)
+        else:
+            deepsort.increment_ages()
 
         # save video
         if args.savevid:
@@ -329,6 +343,7 @@ def parse_args():
     parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/model/v5s_human_mosaic.pt")
     parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_type_clothes.pt")
     parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_color_clothes.pt")
+    parser.add_argument("--cfg_deepsort", type=str, default="deep_sort_pytorch/configs/deep_sort.yaml")
     parser.add_argument('--top', type=str, default=None, help='Torso of human, type and color clothes')
     parser.add_argument('--bottom', type=str, default=None, help='Leg of human, type and color clothes')
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
