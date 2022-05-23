@@ -253,7 +253,12 @@ def run(args):
             for det_cls in det_clothes_human:
                 mask_clothes = {}
                 for k, (body, bbox) in enumerate(det_cls.items()):
-                    img = im0s.copy()
+                    img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                    img = np.ones(img.shape, dtype=np.uint8)*255
+                    position = np.where(yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy() == 1)
+                    list_coordinate = list(zip(position[0], position[1]))
+
+                    # Continue code
                     for channel in range(3):
                         img[bbox[1]:bbox[3], bbox[0]:bbox[2], channel] = yolact_preds_mask[k, bbox[1]:bbox[3],
                                                                          bbox[0]:bbox[2]].type(
