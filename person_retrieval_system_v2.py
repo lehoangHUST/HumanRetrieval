@@ -307,7 +307,7 @@ def run(args):
                 print(dict_pred)
 
                 true_top = True if (typ_top in dict_pred['top'][0] and color_top in dict_pred['top'][1]) else False
-                true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_top in dict_pred['bottom'][1]) else False
+                true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_bottom in dict_pred['bottom'][1]) else False
                 if true_top and true_bottom:
                     det_sys.append(det_human[i])
             t10 = time_sync()
