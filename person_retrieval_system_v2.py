@@ -212,7 +212,7 @@ def run(args):
         # time logging for yolo predicting
         # nms for yolo
         # yolo_preds: torch.Tensor
-        yolo_preds = non_max_suppression(yolo_preds, 0.6, 0.5, None, max_det=100)[0]
+        yolo_preds = non_max_suppression(yolo_preds, 0.6, 0.5, humans, None, max_det=100)[0]
         t4 = time_sync()
         # nms time for yolo
         # print(f"YOLO nms time: {t4 - t3:.4f}")
@@ -353,7 +353,7 @@ def parse_args():
     parser.add_argument('--clothes', type=str, default='short_sleeved_shirt')
     parser.add_argument('--view_img', action="store_true")
     parser.add_argument('--savevid', action="store_true")
-    parser.add_argument('--savename', type=str, default="/content/results/out.avi")
+    parser.add_argument('--savename', type=str, default="/content/out.avi")
     args = parser.parse_args()
     return args
 
