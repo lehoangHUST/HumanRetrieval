@@ -308,8 +308,8 @@ def train_color(device, extractor, pretrained, resume, weight, epochs, save_dir,
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--dataset', default="/content/gdrive/MyDrive/HumanRetrieval_v2/Classification/config/dataset.yaml", type=str, help='path to dataset.yaml')
-    parser.add_argument('--augmentation', default="/content/gdrive/MyDrive/HumanRetrieval_v2/Classification/config/augmentation.yaml", type=str, help='path to augmentation.yaml')
+    parser.add_argument('--dataset', default="/content/gdrive/MyDrive/HumanRetrieval_v2/EfficientNET/config/dataset.yaml", type=str, help='path to dataset.yaml')
+    parser.add_argument('--augmentation', default="/content/gdrive/MyDrive/HumanRetrieval_v2/EfficientNET/config/augmentation.yaml", type=str, help='path to augmentation.yaml')
     parser.add_argument('--label_smoothing_CE', '-lsCE', action='store_true', help='use label smoothing on CrossEntropy')
     parser.add_argument('--label_smoothing_BCE', '-lsBCE', action='store_true', help='use label smoothing on BCE')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size')

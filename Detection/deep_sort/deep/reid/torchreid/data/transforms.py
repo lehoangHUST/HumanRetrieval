@@ -110,7 +110,7 @@ class ColorAugmentation(object):
     """Randomly alters the intensities of RGB channels.
 
     Reference:
-        Krizhevsky et al. ImageNet Classification with Deep ConvolutionalNeural
+        Krizhevsky et al. ImageNet EfficientNET with Deep ConvolutionalNeural
         Networks. NIPS 2012.
 
     Args:

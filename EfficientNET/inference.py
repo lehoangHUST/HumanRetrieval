@@ -54,7 +54,7 @@ def parse_args():
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--base_model', default='efficientnet-b1', type=str, help='feature extractor')
     parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/HumanRetrieval_v2/train/best_efficientnet-b1type_clothes.pt")
-    parser.add_argument('--cls_data', type=str, default="/content/gdrive/MyDrive/HumanRetrieval_v2/Classification/config/dataset.yaml")
+    parser.add_argument('--cls_data', type=str, default="/content/gdrive/MyDrive/HumanRetrieval_v2/EfficientNET/config/dataset.yaml")
     parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/HumanRetrieval_v2/train/best_efficientnet-b1color_clothes.pt")
     parser.add_argument('--image_path', required=True, type=str, help='path to image')
     return parser.parse_args()
