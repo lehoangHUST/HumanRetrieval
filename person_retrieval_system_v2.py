@@ -317,8 +317,8 @@ def run(args):
 
         # Tracking object when search suitable
         if len(det_sys):
-            list_det = np.array(list_det)
-            det = torch.from_numpy(list_det)
+            det_sys = np.array(det_sys)
+            det = torch.from_numpy(det_sys)
             xywhs = xyxy2xywh(det[:, 0:4])
             confs = det[:, 4]
             clss = det[:, 5]
