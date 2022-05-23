@@ -23,7 +23,6 @@ from Detection.yolov5.utils.general import set_logging, non_max_suppression, xyx
 from Detection.yolov5.utils.plots import Annotator
 
 from Detection.eval_clothes import run_eval_clothes
-from Detection.deep_sort.deep_sort_pytorch.utils.draw import draw_boxes
 
 
 classes = [

@@ -67,8 +67,8 @@ def config_Yolov5(yolo_weight, device, imgsz=640):
 
 # Deepsort
 # ------------------------------------------------------------
-from deep_sort.deep_sort_pytorch.utils.parser import get_config
-from deep_sort.deep_sort_pytorch.deep_sort import DeepSort
+from deep_sort.utils.parser import get_config
+from deep_sort.deep_sort import DeepSort
 
 
 def config_deepsort(deepsort_cfg):
