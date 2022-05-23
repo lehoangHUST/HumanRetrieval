@@ -343,7 +343,7 @@ def parse_args():
     parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/model/v5s_human_mosaic.pt")
     parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_type_clothes.pt")
     parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_color_clothes.pt")
-    parser.add_argument("--cfg_deepsort", type=str, default="deep_sort_pytorch/configs/deep_sort.yaml")
+    parser.add_argument("--cfg_deepsort", type=str, default="/content/HumanRetrieval/deep_sort/deep_sort_pytorch/configs/deep_sort.yaml")
     parser.add_argument('--top', type=str, default=None, help='Torso of human, type and color clothes')
     parser.add_argument('--bottom', type=str, default=None, help='Leg of human, type and color clothes')
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
