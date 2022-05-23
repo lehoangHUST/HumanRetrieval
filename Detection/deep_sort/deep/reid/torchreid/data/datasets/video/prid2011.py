@@ -12,7 +12,7 @@ class PRID2011(VideoDataset):
 
     Reference:
         Hirzer et al. Person Re-Identification by Descriptive and
-        Discriminative Classification. SCIA 2011.
+        Discriminative EfficientNET. SCIA 2011.
 
     URL: `<https://www.tugraz.at/institute/icg/research/team-bischof/lrs/downloads/PRID11/>`_
     

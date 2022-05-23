@@ -12,11 +12,11 @@ import torch.backends.cudnn as cudnn
 
 # own lib import
 import modules
-from Classification.modeling.model_v2 import Model_type
-from Classification.modeling.model_v2 import Model_color
-from Classification.modeling.model import Model
-from Classification.Classification_dict import dict as cls_dict
-from Classification.utils import utils
+from EfficientNET.modeling.model_v2 import Model_type
+from EfficientNET.modeling.model_v2 import Model_color
+from EfficientNET.modeling.model import Model
+from EfficientNET.Classification_dict import dict as cls_dict
+from EfficientNET.utils import utils
 from Detection.yolov5.utils.datasets import LoadImages, LoadStreams, IMG_FORMATS
 from Detection.yolov5.utils.torch_utils import time_sync, select_device
 from Detection.yolov5.utils.general import set_logging, non_max_suppression, xyxy2xywh, scale_coords
@@ -346,7 +346,7 @@ def parse_args():
     parser.add_argument('--top', type=str, default=None, help='Torso of human, type and color clothes')
     parser.add_argument('--bottom', type=str, default=None, help='Leg of human, type and color clothes')
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
-    parser.add_argument('--cls_data', type=str, default="Classification/config/dataset.yaml")
+    parser.add_argument('--cls_data', type=str, default="EfficientNET/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')
     parser.add_argument('--humans', type=str)
     parser.add_argument('--clothes', type=str, default='short_sleeved_shirt')

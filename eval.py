@@ -8,8 +8,8 @@ import torch.backends.cudnn as cudnn
 
 # own lib import
 import modules
-from Classification.modeling.model_v2 import Model_type
-from Classification.modeling.model_v2 import Model_color
+from EfficientNET.modeling.model_v2 import Model_type
+from EfficientNET.modeling.model_v2 import Model_color
 from Detection.yolov5.utils.datasets import LoadImages, LoadStreams, IMG_FORMATS
 from Detection.yolov5.utils.torch_utils import time_sync, select_device
 from Detection.yolov5.utils.general import set_logging, non_max_suppression, scale_coords
@@ -17,7 +17,7 @@ from Detection.yolov5.utils.plots import Annotator
 
 from Detection.eval_clothes import run_eval_clothes
 
-from Classification.utils import utils
+from EfficientNET.utils import utils
 
 from utils.metrics import accuracy_system, split_label
 
@@ -254,7 +254,7 @@ def parse_args():
                         default="/content/gdrive/MyDrive/model/EffNet_B2_color_Aug/efficientnet-b2color_clothes.pt")
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
     parser.add_argument('--cls_data', type=str,
-                        default="/content/gdrive/MyDrive/HumanRetrieval_v2/Classification/config/dataset.yaml")
+                        default="/content/gdrive/MyDrive/HumanRetrieval_v2/EfficientNET/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')
     parser.add_argument('--humans', type=str)
     parser.add_argument('--clothes', type=str, default='short_sleeved_shirt')

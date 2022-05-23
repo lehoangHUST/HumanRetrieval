@@ -59,10 +59,10 @@ from Detection.deep_sort.deep_sort_pytorch.deep_sort import DeepSort
 # Draw plot
 from draw import *
 
-# Classification
-from Classification.modeling.model import Model
-from Classification.utils import utils
-from Classification.Classification_dict import dict as cls_dict
+# EfficientNET
+from EfficientNET.modeling.model import Model
+from EfficientNET.utils import utils
+from EfficientNET.Classification_dict import dict as cls_dict
 
 # File train model with Yolact
 train_model_clothes = 'train_models/yolact_base_clothes_1_30000.pth'
@@ -120,7 +120,7 @@ def add_args():
                         help='A path to a video to evaluate on. Passing in a number will use that index webcam.')
     parser.add_argument('--extractor', default='efficientnet-b0', type=str,
                         help='String represent efficientnet extractor')
-    parser.add_argument('--cls_weight', default='Classification/weights/effnet_b0_2011.pt', type=str,
+    parser.add_argument('--cls_weight', default='EfficientNET/weights/effnet_b0_2011.pt', type=str,
                         help='Path to trained weights of classification model')
     args = parser.parse_args()
     return args
@@ -278,7 +278,7 @@ def evalimage(search_human, search_clothes, img_numpy, imgsz_yolov5):
             else:
                 deepsort.increment_ages()
 
-        # Classification part
+        # EfficientNET part
         bboxes = pred_bbox_clothes[:, :4]  # np.ndarray
         type_preds = []
         color_preds = []

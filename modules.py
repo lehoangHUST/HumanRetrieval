@@ -89,13 +89,13 @@ def config_deepsort(deepsort_cfg):
 # ------------------------------------------------------------
 
 
-# Classification
+# EfficientNET
 # ------------------------------------------------------------
 # TODO: create a yaml config file to load classification model from
-sys.path.insert(0, "Classification")
-from Classification.modeling.model import Model
-from Classification.modeling.model_v2 import Model_type
-from Classification.modeling.model_v2 import Model_color
+sys.path.insert(0, "EfficientNET")
+from EfficientNET.modeling.model import Model
+from EfficientNET.modeling.model_v2 import Model_type
+from EfficientNET.modeling.model_v2 import Model_color
 
 
 # Model type + color
