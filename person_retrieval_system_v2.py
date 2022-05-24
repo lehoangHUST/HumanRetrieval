@@ -264,9 +264,9 @@ def run(args):
                         img[coordinate[0], coordinate[1], :] = _img[coordinate[0], coordinate[1], :]
 
                     if body == 'top':
-                        mask_clothes['top'] = img[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                        mask_clothes['top'] = img
                     elif body == 'bottom':
-                        mask_clothes['bottom'] = img[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                        mask_clothes['bottom'] = img
 
                 mask_det.append(mask_clothes)
 
