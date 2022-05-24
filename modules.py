@@ -71,15 +71,15 @@ from deep_sort.utils.parser import get_config
 from deep_sort.deep_sort import DeepSort
 
 
-def config_deepsort(deepsort_cfg):
+def config_deepsort(deepsort_cfg, device):
     # initialize deepsort
     cfg = get_config()
     cfg.merge_from_file(deepsort_cfg)
-    deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
-                        max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
-                        max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
-                        max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
-                        use_cuda=True)
+    deepsort = DeepSort(cfg.DEEPSORT.MODEL_TYPE,
+                device,
+                max_dist=cfg.DEEPSORT.MAX_DIST,
+                max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,)
     return deepsort
 
 
