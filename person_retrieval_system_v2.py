@@ -123,11 +123,13 @@ def run(args):
     else:
         clothes = [args.clothes]
 
+    # Top: Torso of human
     if ',' in args.top:
         typ_top, color_top = args.top.split(',')
     else:
         raise TypeError
 
+    # Bottom: Leg of human
     if ',' in args.bottom:
         typ_bottom, color_bottom = args.bottom.split(',')
     else:
@@ -144,7 +146,7 @@ def run(args):
     net_YOLO, strides, yolo_name, imgsz = modules.config_Yolov5(args.yolo_weight, device)
 
     # Load deepsort
-    deepsort = modules.config_deepsort(args.cfg_deepsort)
+    deepsort = modules.config_deepsort(args.cfg_deepsort, device)
 
     # Load net Type clothes
     net_type = Model_type(args.extractor,
@@ -253,19 +255,14 @@ def run(args):
             for det_cls in det_clothes_human:
                 mask_clothes = {}
                 for k, (body, bbox) in enumerate(det_cls.items()):
-                    img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
-                    img = np.ones(img.shape, dtype=np.uint8)*255
-                    position = np.where(yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy() == 1)
+                    _img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                    img = np.ones(_img.shape, dtype=np.uint8) * 255
+                    position = np.where(
+                        yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy() == 1)
                     list_coordinate = list(zip(position[0], position[1]))
+                    for coordinate in list_coordinate:
+                        img[coordinate[0], coordinate[1], :] = _img[coordinate[0], coordinate[1], :]
 
-                    # Continue code
-                    for channel in range(3):
-                        img[bbox[1]:bbox[3], bbox[0]:bbox[2], channel] = yolact_preds_mask[k, bbox[1]:bbox[3],
-                                                                         bbox[0]:bbox[2]].type(
-                            torch.uint8).cpu().numpy() \
-                                                                         * img[bbox[1]:bbox[3], bbox[0]:bbox[2],
-                                                                           channel]
-                    img[img == [0, 0, 0]] = 255
                     if body == 'top':
                         mask_clothes['top'] = img[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
                     elif body == 'bottom':
