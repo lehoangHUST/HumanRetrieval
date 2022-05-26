@@ -51,8 +51,8 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
     
     # Actually extract everything from dets now
     classes = dets['class']
-    boxes   = dets['box']
-    scores  = dets['score']
+    boxes = dets['box']
+    scores = dets['score']
     masks   = dets['mask']
 
     if cfg.mask_type == mask_type.lincomb and cfg.eval_mask_branch:
@@ -120,9 +120,6 @@ def postprocess(det_output, w, h, batch_idx=0, interpolation_mode='bilinear',
         masks = full_masks
 
     return classes, scores, boxes, masks
-
-
-    
 
 
 def undo_image_transformation(img, w, h):
