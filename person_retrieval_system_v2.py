@@ -255,13 +255,12 @@ def run(args):
             for det_cls in det_clothes_human:
                 mask_clothes = {}
                 for k, (body, bbox) in enumerate(det_cls.items()):
-                    _img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
-                    img = np.ones(_img.shape, dtype=np.uint8) * 255
-                    position = np.where(
-                        yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy() == 1)
-                    list_coordinate = list(zip(position[0], position[1]))
-                    for coordinate in list_coordinate:
-                        img[coordinate[0], coordinate[1], :] = _img[coordinate[0], coordinate[1], :]
+                    img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                    mask = yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy()
+                    masks = np.array([mask, mask, mask]).transpose(1, 2, 0)
+                    masks_white = (1 - masks) * 255
+                    img *= masks
+                    img += masks_white
 
                     if body == 'top':
                         mask_clothes['top'] = img
