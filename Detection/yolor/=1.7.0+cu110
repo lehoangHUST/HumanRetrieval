@@ -1,0 +1,33 @@
+Looking in indexes: https://pypi.org/simple, https://us-python.pkg.dev/colab-wheels/public/simple/
+Looking in links: https://download.pytorch.org/whl/torch_stable.html
+Requirement already satisfied: torch in /usr/local/lib/python3.7/dist-packages (1.7.0)
+Collecting torchvision==0.8.1+cu110
+  Downloading https://download.pytorch.org/whl/cu110/torchvision-0.8.1%2Bcu110-cp37-cp37m-linux_x86_64.whl (12.9 MB)
+Collecting torchtext===0.11.0
+  Downloading torchtext-0.11.0-cp37-cp37m-manylinux1_x86_64.whl (8.0 MB)
+Collecting torchaudio===0.10.0
+  Downloading torchaudio-0.10.0-cp37-cp37m-manylinux1_x86_64.whl (2.9 MB)
+Requirement already satisfied: numpy in /usr/local/lib/python3.7/dist-packages (from torchvision==0.8.1+cu110) (1.21.6)
+Requirement already satisfied: pillow>=4.1.1 in /usr/local/lib/python3.7/dist-packages (from torchvision==0.8.1+cu110) (7.1.2)
+Requirement already satisfied: typing-extensions in /usr/local/lib/python3.7/dist-packages (from torch) (4.2.0)
+Requirement already satisfied: dataclasses in /usr/local/lib/python3.7/dist-packages (from torch) (0.6)
+Requirement already satisfied: future in /usr/local/lib/python3.7/dist-packages (from torch) (0.16.0)
+INFO: pip is looking at multiple versions of torch to determine which version is compatible with other requirements. This could take a while.
+Collecting torch
+  Downloading https://download.pytorch.org/whl/cu92/torch-1.7.0%2Bcu92-cp37-cp37m-linux_x86_64.whl (577.3 MB)
+INFO: pip is looking at multiple versions of <Python from Requires-Python> to determine which version is compatible with other requirements. This could take a while.
+  Downloading https://download.pytorch.org/whl/cu110/torch-1.7.0%2Bcu110-cp37-cp37m-linux_x86_64.whl (1137.1 MB)
+  Downloading https://download.pytorch.org/whl/cu101/torch-1.7.0%2Bcu101-cp37-cp37m-linux_x86_64.whl (735.3 MB)
+  Downloading https://download.pytorch.org/whl/cpu/torch-1.7.0%2Bcpu-cp37-cp37m-linux_x86_64.whl (159.3 MB)
+  Using cached torch-1.7.0-cp37-cp37m-manylinux1_x86_64.whl (776.7 MB)
+INFO: pip is looking at multiple versions of torchvision to determine which version is compatible with other requirements. This could take a while.
+
+The conflict is caused by:
+    The user requested torch
+    torchvision 0.8.1+cu110 depends on torch==1.7.0
+    torchtext 0.11.0 depends on torch==1.10.0
+
+To fix this you could try to:
+1. loosen the range of package versions you've specified
+2. remove package versions to allow pip attempt to solve the dependency conflict
+

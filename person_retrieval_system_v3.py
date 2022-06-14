@@ -17,10 +17,9 @@ from EfficientNET.modeling.model_v2 import Model_color
 from EfficientNET.modeling.model import Model
 from EfficientNET.Classification_dict import dict as cls_dict
 from EfficientNET.utils import utils
-from Detection.yolov5.utils.datasets import LoadImages, LoadStreams, IMG_FORMATS
-from Detection.yolov5.utils.torch_utils import time_sync, select_device
-from Detection.yolov5.utils.general import set_logging, non_max_suppression, xyxy2xywh, scale_coords
-from Detection.yolov5.utils.plots import Annotator
+from Detection.yolor.utils.datasets import LoadImages, LoadStreams, img_formats
+from Detection.yolor.utils.torch_utils import select_device, load_classifier, time_synchronized
+from Detection.yolor.utils.general import set_logging, non_max_suppression, xyxy2xywh, scale_coords
 
 from Detection.eval_clothes import run_eval_clothes
 
@@ -52,6 +51,11 @@ bottom = [
     "short",
     "trousers",
     "skirt",
+]
+
+humans = [
+    "male",
+    "female"
 ]
 
 
@@ -142,8 +146,8 @@ def run(args):
     # Load nets YOLACT
     net_YOLACT, yolact_name = modules.config_Yolact(args.yolact_weight)
 
-    # Load nets YOLOv5
-    net_YOLO, strides, yolo_name, imgsz = modules.config_Yolov5(args.yolo_weight, device)
+    # Load nets YOLOr
+    net_YOLOR, imgsz = modules.config_Yolor(args.cfg_yolor, args.yolor_weight, device)
 
     # Load deepsort
     deepsort = modules.config_deepsort(args.cfg_deepsort, device)
@@ -174,7 +178,7 @@ def run(args):
                               stride=strides)  # (sources, letterbox_img: np, orig_img: cv2, None)
     else:
         dataset = LoadImages(args.source, img_size=imgsz,
-                             stride=strides)  # (path, letterbox_img: np, orig_img: cv2, cap)
+                             auto_size=64)  # (path, letterbox_img: np, orig_img: cv2, cap)
 
     # saving prediction video
     if args.savevid:
@@ -187,41 +191,29 @@ def run(args):
         output = cv2.VideoWriter(args.savename, fourcc, 30, res)
 
     # Run Inference
-    for index, (path, im, im0s, vid_cap, _) in enumerate(dataset):
+    for index, (path, im, im0s, vid_cap) in enumerate(dataset):
         det_sys = []
         human_label = ""
-        is_img = True if any(ext in path for ext in IMG_FORMATS) else False
-        annotator = Annotator(np.ascontiguousarray(im0s),
-                              line_width=2,
-                              font_size=1)
+        is_img = True if any(ext in path for ext in img_formats) else False
 
-        # yolo inference
+        # yolor inference
         # -----------------------------------------
-        t1 = time_sync()
-        im_yolo = torch.from_numpy(im).to(device)  # yolo input
-        im_yolo = im_yolo.float()
-        im_yolo /= 255
-        if len(im_yolo.shape) == 3:
-            im_yolo = im_yolo[None]  # expand for batch dim
-        t2 = time_sync()
-        # time logging for data loading
-        dt0 = t2 - t1
-        # Inference on yolov5
-        yolo_preds = net_YOLO(im_yolo)  # (batch, (bbox, conf, class)) type torch.Tensor
-        t3 = time_sync()
-        # print(f"YOLO inference time: {t3 - t2:.4f}")
-        # time logging for yolo predicting
-        # nms for yolo
-        # yolo_preds: torch.Tensor
-        yolo_preds = non_max_suppression(yolo_preds, 0.6, 0.5, humans, None, max_det=100)[0]
-        t4 = time_sync()
-        # nms time for yolo
-        # print(f"YOLO nms time: {t4 - t3:.4f}")
-
-        # scale yolo preds to im0 for drawing
-        if len(yolo_preds):
-            yolo_preds[:, :4] = scale_coords(im_yolo.shape[2:], yolo_preds[:, :4], im0s.shape).round()
-
+        im_yolor = torch.from_numpy(im).to(device)  # yolo input
+        im_yolor = im_yolor.float()
+        im_yolor /= 255
+        if len(im_yolor.shape) == 3:
+            im_yolor = im_yolor[None]  # expand for batch dim
+      
+        t1 = time_synchronized()
+        yolor_preds = net_YOLOR(im_yolor)[0]  # (batch, (bbox, conf, class)) type torch.Tensor
+        
+        yolor_preds = non_max_suppression(yolor_preds, 0.6, 0.5, humans, None)[0]
+      
+        if len(yolor_preds):
+            yolor_preds[:, :4] = scale_coords(im_yolor.shape[2:], yolor_preds[:, :4], im0s.shape).round()
+        t2 = time_synchronized()
+        print(f"Inference time for YOLOR: {t2 - t1:.4f}")
+        
         # -----------------------------------------
 
         # yolact inference
@@ -230,45 +222,57 @@ def run(args):
         im_yolact = im0s.copy()  # copy to another image so we can draw on im0s later
         # type torch.Tensor, shape (batch, (bbox, conf, cls))
         # type int if no detection
-        t5 = time_sync()
+        
+        t3 = time_synchronized()
         yolact_preds_bbox, yolact_preds_mask = run_eval_clothes(net_YOLACT,
                                                                 search_clothes=clothes,
                                                                 img_numpy=im_yolact)
-
-        t6 = time_sync()
+        t4 = time_synchronized()
+       
         # inference time for YOLACT
-        # print(f"Inference time for YOLACT nms time: {t6 - t5:.4f}")
+        print(f"Inference time for YOLACT: {t4 - t3:.4f}")
 
         if not isinstance(yolact_preds_bbox, int):
             # Matching yolact & yolov5
             # =====================================================
-            t7 = time_sync()
-            det_human, det_clothes_human = matching(yolo_preds, yolact_preds_bbox, clothes)
-            t8 = time_sync()
+            
+            t5 = time_synchronized()
+
+            det_human, det_clothes_human = matching(yolor_preds, yolact_preds_bbox, clothes)
+            
+            t6 = time_synchronized()
+
+            print(f"Inference time for Matching human and clothes: {t6 - t5:.4f}")
+
             # inference time for matching yolact & yolov5
             # print(f"Inference time for YOLACT nms time: {t8 - t7:.4f}")
             # =====================================================
 
             # change background by color
             # =====================================================
+            t7 = time_synchronized()
             mask_det = []
             for det_cls in det_clothes_human:
                 mask_clothes = {}
                 for k, (body, bbox) in enumerate(det_cls.items()):
-                    _img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
-                    img = np.ones(_img.shape, dtype=np.uint8) * 255
-                    position = np.where(
-                        yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy() == 1)
-                    list_coordinate = list(zip(position[0], position[1]))
-                    for coordinate in list_coordinate:
-                        img[coordinate[0], coordinate[1], :] = _img[coordinate[0], coordinate[1], :]
-
+                    img = im0s[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+                    mask = yolact_preds_mask[k, bbox[1]:bbox[3], bbox[0]:bbox[2]].type(torch.uint8).cpu().numpy()
+                    masks = np.array([mask, mask, mask]).transpose(1, 2, 0)
+                    masks_white = (1 - masks) * 255
+                    img *= masks
+                    img += masks_white
+                    cv2.imwrite('/content/' + str(k+1) + '.jpg', img)
+                    
                     if body == 'top':
                         mask_clothes['top'] = img
                     elif body == 'bottom':
                         mask_clothes['bottom'] = img
-
+          
                 mask_det.append(mask_clothes)
+            t8 = time_synchronized()
+            print(f"Inference time for change background: {t8 - t7:.4f}")
+
+
 
             # ======================================================
             # classification
@@ -279,14 +283,15 @@ def run(args):
             # 4. Convert output from classification model to correct read-able format
             # 5. Draw bbox with type and color label
             # =======================================================
-            t9 = time_sync()
+            t9 = time_synchronized()
             clothes_labels = []
             for i, mask_clothes in enumerate(mask_det):
                 dict_pred = {}
                 for body, mask in mask_clothes.items():
                     inp = net_type.preprocess(mask)
-                    color_output = net_color(inp)
                     if body == 'bottom':
+                        t13 = time_synchronized()
+                        color_output = net_color(inp)
                         colors = cls_dataset['class']['Color']
                         color_pred = []
                         color_output = (color_output > 0.5).type(torch.int)
@@ -297,23 +302,30 @@ def run(args):
                                 color_pred.append(color)
                         idx = det_clothes_human[i]['bottom'][-1]
                         dict_pred['bottom'] = [classes[idx], color_pred, det_clothes_human[i]['bottom'][:4]]
+                        t14 = time_synchronized()
+                        print(f"Time inference EfficientNet part bottom: {t14 - t13:.4f}")
+
                     if body == 'top':
+                        t11 = time_synchronized()
                         clothes_output = net_type(inp)
+                        color_output = net_color(inp)
                         # type_pred: string
                         # color_pred: list(string)
                         type_pred, color_pred = utils.convert_output(cls_dataset['class'],
                                                                      [clothes_output, color_output])
                         type_pred = type_pred.lower()
                         dict_pred['top'] = [type_pred, color_pred, det_clothes_human[i]['top'][:4]]
+                        t12 = time_synchronized()
+                        print(f"Time inference EfficientNet part top: {t12 - t11:.4f}")
                 print(dict_pred)
 
                 true_top = True if (typ_top in dict_pred['top'][0] and color_top in dict_pred['top'][1]) else False
                 true_bottom = True if (typ_bottom in dict_pred['bottom'][0] and color_bottom in dict_pred['bottom'][1]) else False
                 if true_top and true_bottom:
                     det_sys.append(det_human[i])
-            t10 = time_sync()
+            t10 = time_synchronized()
             # inference time for efficientNet
-            # print(f"Inference time for efficientNet nms time: {t10 - t9:.4f}")
+            print(f"Inference time for efficientNet nms time: {t10 - t9:.4f}")
             # -----------------------------------------
 
         # Tracking object when search suitable
@@ -330,7 +342,7 @@ def run(args):
             # img_numpy = display_video(img_numpy, outputs, color=COLOR[0], search=search)
         else:
             deepsort.increment_ages()
-
+        
         # save video
         if args.savevid:
             output.write(annotator.im)
@@ -341,16 +353,17 @@ def parse_args():
     parser.add_argument('--device', default='')
     parser.add_argument('--yolact_weight', type=str,
                         default="/content/gdrive/MyDrive/model/yolact_plus_resnet50_6_144000.pth")
-    parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/model/v5s_human_mosaic.pt")
+    parser.add_argument('--cfg_yolor', type=str, default='/content/gdrive/MyDrive/HumanRetrieval_v3/Detection/yolor/cfg/yolor_csp.cfg')
+    parser.add_argument('--yolor_weight', nargs='+', type=str, default='/content/best.pt', help='model.pt path(s)')
     parser.add_argument('--type_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_type_clothes.pt")
     parser.add_argument('--color_clothes_weight', type=str, default="/content/gdrive/MyDrive/model/b1_color_clothes.pt")
-    parser.add_argument("--cfg_deepsort", type=str, default="/content/HumanRetrieval/deep_sort/deep_sort_pytorch/configs/deep_sort.yaml")
+    parser.add_argument("--cfg_deepsort", type=str, default="/content/gdrive/MyDrive/HumanRetrieval_v3/Detection/deep_sort/configs/deep_sort.yaml")
     parser.add_argument('--top', type=str, default=None, help='Torso of human, type and color clothes')
     parser.add_argument('--bottom', type=str, default=None, help='Leg of human, type and color clothes')
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
     parser.add_argument('--cls_data', type=str, default="EfficientNET/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')
-    parser.add_argument('--humans', type=str)
+    parser.add_argument('--humans', type=str, default=None)
     parser.add_argument('--clothes', type=str, default='short_sleeved_shirt')
     parser.add_argument('--view_img', action="store_true")
     parser.add_argument('--savevid', action="store_true")

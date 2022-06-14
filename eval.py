@@ -10,18 +10,17 @@ import torch.backends.cudnn as cudnn
 import modules
 from EfficientNET.modeling.model_v2 import Model_type
 from EfficientNET.modeling.model_v2 import Model_color
-from Detection.yolov5.utils.datasets import LoadImages, LoadStreams, IMG_FORMATS
-from Detection.yolov5.utils.torch_utils import time_sync, select_device
-from Detection.yolov5.utils.general import set_logging, non_max_suppression, scale_coords
-from Detection.yolov5.utils.plots import Annotator
+from Detection.yolor.utils.datasets import LoadImages, LoadStreams, img_formats
+from Detection.yolor.utils.torch_utils import select_device, load_classifier, time_synchronized
+from Detection.yolor.utils.general import set_logging, non_max_suppression, xyxy2xywh, scale_coords
 
 from Detection.eval_clothes import run_eval_clothes
 
 from EfficientNET.utils import utils
 
-from utils.metrics import accuracy_system, split_label
+from util.metrics import accuracy_system, split_label
 
-classes = [
+_classes_ = [
     "short_sleeved_shirt",
     "long_sleeved_shirt",
     "short_sleeved_outwear",
@@ -53,6 +52,12 @@ bottom = [
     "vest_dress"
 ]
 
+human = [
+    "male",
+    "female",
+]
+
+
 
 def remove_clothes(yolact_preds_bbox: torch.Tensor, yolact_preds_mask: torch.Tensor):
     yolact_preds_type = list(map(int, yolact_preds_bbox[:, 5].tolist()))
@@ -62,13 +67,13 @@ def remove_clothes(yolact_preds_bbox: torch.Tensor, yolact_preds_mask: torch.Ten
     index, up_body, down_body = 0, False, False
 
     for i, pred_type in enumerate(yolact_preds_type):
-        if classes[pred_type] in top and not up_body:
+        if _classes_[pred_type] in top and not up_body:
             up_body = True
             bbox[index, :] = yolact_preds_bbox[i, :4]
             typ[index, :] = yolact_preds_bbox[i, 5]
             mask[index, :] = yolact_preds_mask[i, :]
             index += 1
-        if classes[pred_type] in bottom and not down_body:
+        if _classes_[pred_type] in bottom and not down_body:
             down_body = True
             bbox[index, :] = yolact_preds_bbox[i, :4]
             typ[index, :] = yolact_preds_bbox[i, 5]
@@ -105,9 +110,11 @@ def run(args):
     '''if not all(elem in class_clothes for elem in search_clothes):
         raise ValueError(f"Have any category not exist in parameter classes")'''
 
-    # Load nets
+    # Load YOLACT
     net_YOLACT, yolact_name = modules.config_Yolact(args.yolact_weight)
-    net_YOLO, strides, yolo_name, imgsz = modules.config_Yolov5(args.yolo_weight, device)
+
+    # Load YOLOR
+    net_YOLOR, imgsz = modules.config_Yolor(args.cfg_yolor, args.yolor_weight, device)
 
     # Type clothes 
     net_type = Model_type(args.extractor,
@@ -135,41 +142,36 @@ def run(args):
                               stride=strides)  # (sources, letterbox_img: np, orig_img: cv2, None)
     else:
         dataset = LoadImages(args.source, img_size=imgsz,
-                             stride=strides)  # (path, letterbox_img: np, orig_img: cv2, cap)
+                             auto_size=64)  # (path, letterbox_img: np, orig_img: cv2, cap)
 
     # Preds label: Human + Type clothes + Color clothes
     # True label : Path file include Human + Type clothes + Color clothes
     true_label = []
     pred_label = []
     # Run Inference
-    for index, (path, im, im0s, vid_cap, _) in enumerate(dataset):
+    for index, (path, im, im0s, vid_cap) in enumerate(dataset):
         print(path)
         label = ""
-        is_img = True if any(ext in path for ext in IMG_FORMATS) else False
-        annotator = Annotator(np.ascontiguousarray(im0s),
-                              line_width=2,
-                              font_size=1)
+        is_img = True if any(ext in path for ext in img_formats) else False
 
-        # yolo inference
+
+        # yolor inference
         # -----------------------------------------
-        t1 = time_sync()
-        im_yolo = torch.from_numpy(im).to(device)  # yolo input
-        im_yolo = im_yolo.float()
-        im_yolo /= 255
-        if len(im_yolo.shape) == 3:
-            im_yolo = im_yolo[None]  # expand for batch dim
-        # Inference on yolov5
-        yolo_preds = net_YOLO(im_yolo)  # (batch, (bbox, conf, class)) type torch.Tensor
-        t3 = time_sync()
-        # nms for yolo
-        # yolo_preds: torch.Tensor
-        yolo_preds = non_max_suppression(yolo_preds, 0, 0.4, None, max_det=100)[0]
-        # scale yolo preds to im0 for drawing
-        if len(yolo_preds):
-            yolo_preds[:, :4] = scale_coords(im_yolo.shape[2:], yolo_preds[:, :4], im0s.shape).round()
+        im_yolor = torch.from_numpy(im).to(device)  # yolo input
+        im_yolor = im_yolor.float()
+        im_yolor /= 255
+        if len(im_yolor.shape) == 3:
+            im_yolor = im_yolor[None]  # expand for batch dim
+      
+        
+        yolor_preds = net_YOLOR(im_yolor)[0]  # (batch, (bbox, conf, class)) type torch.Tensor
+        
+        yolor_preds = non_max_suppression(yolor_preds, 0, 0.5, args.classes, None)[0]
+      
+        if len(yolor_preds):
+            yolor_preds[:, :4] = scale_coords(im_yolor.shape[2:], yolor_preds[:, :4], im0s.shape).round()
 
         # -----------------------------------------
-
         # yolact inference
         # -----------------------------------------
         # TODO: re-write the run_eval_clothes function, drop FastBaseTransform, drop prep_display
@@ -215,7 +217,7 @@ def run(args):
             for idx, mask in enumerate(mask_clothes):
                 inp = net_type.preprocess(mask)
                 color_output = net_color(inp)
-                if classes[typ[idx][0]] in bottom:
+                if _classes_[typ[idx][0]] in bottom:
                     colors = cls_dataset['class']['Color']
                     color_pred = []
                     color_output = (color_output > 0.5).type(torch.int)
@@ -224,17 +226,19 @@ def run(args):
                         if color_output[0, i] == 1:
                             color = colors[i]
                             color_pred.append(color)
-                    dict_pred['bottom'] = [classes[typ[idx][0]], color_pred]
+                    dict_pred['bottom'] = [_classes_[typ[idx][0]], color_pred]
 
-                if classes[typ[idx][0]] in top:
+                if _classes_[typ[idx][0]] in top:
                     clothes_output = net_type(inp)
                     # type_pred: string
                     # color_pred: list(string)
                     type_pred, color_pred = utils.convert_output(cls_dataset['class'], [clothes_output, color_output])
                     type_pred = type_pred.lower()
                     dict_pred['top'] = [type_pred, color_pred]
-            dict_pred['gender'] = yolo_name[int(yolo_preds[0, 5])]
 
+            dict_pred['gender'] = human[int(yolor_preds[0, 5])]
+            print(dict_pred)
+            print(split_label(path))
             # Append pred_label and true_label
             pred_label.append(dict_pred)
             true_label.append(split_label(path))
@@ -247,14 +251,16 @@ def parse_args():
     parser.add_argument('--device', default='')
     parser.add_argument('--yolact_weight', type=str,
                         default="/content/gdrive/MyDrive/model/yolact_plus_resnet50_6_144000.pth")
-    parser.add_argument('--yolo_weight', type=str, default="/content/gdrive/MyDrive/model/best.pt")
+    parser.add_argument('--cfg_yolor', type=str, default='/content/gdrive/MyDrive/HumanRetrieval_v3/Detection/yolor/cfg/yolor_csp.cfg')
+    parser.add_argument('--yolor_weight', nargs='+', type=str, default='/content/best.pt', help='model.pt path(s)')
+    parser.add_argument('--classes', nargs='+', type=int, help='filter by class: --class 0, or --class 0 2 3')
     parser.add_argument('--type_clothes_weight', type=str,
                         default="/content/gdrive/MyDrive/model/EffNet_B2_type_Aug/efficientnet-b2type_clothes.pt")
     parser.add_argument('--color_clothes_weight', type=str,
                         default="/content/gdrive/MyDrive/model/EffNet_B2_color_Aug/efficientnet-b2color_clothes.pt")
     parser.add_argument('--extractor', type=str, default='efficientnet-b0')
     parser.add_argument('--cls_data', type=str,
-                        default="/content/gdrive/MyDrive/HumanRetrieval_v2/EfficientNET/config/dataset.yaml")
+                        default="/content/gdrive/MyDrive/HumanRetrieval_v3/EfficientNET/config/dataset.yaml")
     parser.add_argument('--source', type=str, default='0')
     parser.add_argument('--humans', type=str)
     parser.add_argument('--clothes', type=str, default='short_sleeved_shirt')

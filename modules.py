@@ -47,7 +47,7 @@ def config_Yolact(yolact_weight):
 
 # ------------------------------------------------------------
 
-
+"""
 # YOLOv5
 # ------------------------------------------------------------
 sys.path.insert(0, "Detection/yolov5")
@@ -63,6 +63,24 @@ def config_Yolov5(yolo_weight, device, imgsz=640):
     imgsz = check_img_size(imgsz, s=stride)
 
     return model, stride, names, imgsz
+"""
+
+# YOLOR
+
+sys.path.insert(0, "Detection/yolor")
+
+from yolor.models.models import Darknet
+from yolor.utils.general import *
+
+def config_Yolor(cfg, yolor_weight, device, imgsz=448):
+    # Load model
+    model = Darknet(cfg, imgsz).cuda()
+    model.load_state_dict(torch.load(yolor_weight, map_location=device)['model'])
+    imgsz = check_img_size(imgsz, s=64)  # check img_size
+    model.to(device).eval()
+
+    return model, imgsz
+    
 
 
 # Deepsort
