@@ -17,6 +17,12 @@ pip install torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 -f htt
 python setup.py build develop
 ```
 
+# File weights
+
+MỘt số file weights : YOLACT++, YOLOR, YOLOv5, EfficientNet     
+![link drive](https://drive.google.com/drive/folders/1UVwUD7kz1qlpq9OeMjFOXhCSEfmaznKL?usp=sharing)
+
+
 # Chạy
 ```
 %cd ../HumanRetrieval/
