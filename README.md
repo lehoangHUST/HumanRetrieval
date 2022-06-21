@@ -19,8 +19,7 @@ python setup.py build develop
 
 # File weights
 
-MỘt số file weights : YOLACT++, YOLOR, YOLOv5, EfficientNet     
-![link drive](https://drive.google.com/drive/folders/1UVwUD7kz1qlpq9OeMjFOXhCSEfmaznKL?usp=sharing)
+MỘt số file weights : YOLACT++, YOLOR, YOLOv5, EfficientNet : [link drive](https://drive.google.com/drive/folders/1UVwUD7kz1qlpq9OeMjFOXhCSEfmaznKL?usp=sharing)
 
 
 # Chạy
